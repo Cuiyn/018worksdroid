@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">018班信息通知系统</string>
+    <string name="action_web">访问网页版</string>
+    <string name="title_activity_about">关于</string>
+</resources>
