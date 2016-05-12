@@ -17,4 +17,12 @@ public class Subject {
     public String getName() {
         return fields.get("name");
     }
+
+    public void setPk(int pk) {
+        this.pk = pk;
+    }
+
+    public void setFields(Map<String, String> fields) {
+        this.fields = fields;
+    }
 }

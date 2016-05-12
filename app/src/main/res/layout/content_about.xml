@@ -24,7 +24,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:textSize="16sp"
-            android:text="Ver 1.1, try to use Material Design.\nBy Cuiyn.\n任何意见及建议请联系作者。"
+            android:text="Ver 1.3.\nBy Cuiyn.\n任何意见及建议请联系作者。"
             />
     </android.support.v7.widget.CardView>
 

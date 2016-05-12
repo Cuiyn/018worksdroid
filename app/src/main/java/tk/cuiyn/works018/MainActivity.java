@@ -3,41 +3,46 @@ package tk.cuiyn.works018;
 import android.content.ContentValues;
 import android.content.Intent;
 import android.database.Cursor;
+import android.database.sqlite.SQLiteDatabase;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.support.design.widget.FloatingActionButton;
+import android.support.design.widget.Snackbar;
+import android.util.Log;
+import android.view.View;
+import android.support.design.widget.NavigationView;
+import android.support.v4.view.GravityCompat;
+import android.support.v4.widget.DrawerLayout;
+import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
-import android.util.Log;
 import android.view.Menu;
-import android.view.View;
 import android.view.MenuItem;
+import android.widget.AbsListView;
 import android.widget.AdapterView;
 import android.widget.ListView;
-import android.database.sqlite.SQLiteDatabase;
 import android.widget.Toast;
 
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 
-import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.CountDownLatch;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity
+        implements NavigationView.OnNavigationItemSelectedListener {
 
     Map<Integer, String> allSubject = new HashMap<>();
     List<Message> allMessage = new ArrayList<>();
     public static final int UPDATE_TEXT = 1;
-    final CountDownLatch subjectCount = new CountDownLatch(1);
+
+    ListView messageListView = null;
 
     private DatabaseHelper dbHelper = new DatabaseHelper(this);
 
@@ -48,63 +53,35 @@ public class MainActivity extends AppCompatActivity {
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
-        FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
-        fab.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                Intent intent = new Intent(MainActivity.this, About.class);
-                startActivity(intent);
-            }
-        });
-
-        SQLiteDatabase database = dbHelper.getWritableDatabase();
-
-        boolean networkState = NetworkDetector.detect(MainActivity.this);
-        if(networkState) {
-            sendRequestWithHttpClient("subject");
-            try {
-                subjectCount.await();
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-            sendRequestWithHttpClient("all");
-        }
-        else {
-            Cursor csubject = database.query("subject", null, null, null, null, null, null);
-            if (csubject.getCount() == 0)
-                Toast.makeText(MainActivity.this, "无网络连接，请打开Wifi或数据流量", Toast.LENGTH_SHORT).show();
-            else {
-                Toast.makeText(MainActivity.this, "无网络连接，仅显示本地数据", Toast.LENGTH_SHORT).show();
-                if(csubject.moveToFirst())
-                {
-                    do {
-                        allSubject.put(csubject.getInt(csubject.getColumnIndex("id")), csubject.getString(csubject.getColumnIndex("name")));
-                    }while (csubject.moveToNext());
+        final FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
+        if (fab != null) {
+            fab.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View view) {
+                    Snackbar.make(view, "正在刷新……", Snackbar.LENGTH_SHORT)
+                            .setAction("Action", null).show();
+                    flush();
                 }
-                Cursor chomework = database.query("homework", null, null, null, null, null, null);
-                if(chomework.moveToLast())
-                {
-                    do {
-                        Message message = new Message();
-                        message.setPk(chomework.getInt(chomework.getColumnIndex("id")));
-                        Map<String, String> fields = new HashMap<>();
-                        fields.put("text", chomework.getString(chomework.getColumnIndex("homework")));
-                        fields.put("date", chomework.getString(chomework.getColumnIndex("date")));
-                        fields.put("subject", ""+chomework.getInt(chomework.getColumnIndex("subjectid")));
-                        message.setFields(fields);
-                        message.setSubjectName(allSubject.get(message.getSubject()));
-                        allMessage.add(message);
-                    }while (chomework.moveToPrevious());
-                }
-                android.os.Message m = new android.os.Message();
-                m.what = UPDATE_TEXT;
-                handler.sendMessage(m);
-            }
+            });
         }
 
+        DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
+        ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
+                this, drawer, toolbar, R.string.navigation_drawer_open, R.string.navigation_drawer_close);
+        drawer.setDrawerListener(toggle);
+        toggle.syncState();
+
+        NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
+        navigationView.setNavigationItemSelectedListener(this);
+
+        messageListView = (ListView) findViewById(R.id.messageListView);
+
+        Snackbar.make(messageListView, "正在刷新……", Snackbar.LENGTH_SHORT)
+                .setAction("Action", null).show();
+        flush();
 
         MessageAdapter adapter = new MessageAdapter(MainActivity.this, R.layout.message_item, allMessage);
-        final ListView messageListView = (ListView) findViewById(R.id.messageListView);
+
         messageListView.setAdapter(adapter);
         messageListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
@@ -117,12 +94,46 @@ public class MainActivity extends AppCompatActivity {
                 startActivity(intent);
             }
         });
+        messageListView.setOnScrollListener(new AbsListView.OnScrollListener() {
+            private int index;
+
+            @Override
+            public void onScrollStateChanged(AbsListView view, int scrollState) {
+                switch (scrollState) {
+                    case SCROLL_STATE_TOUCH_SCROLL:
+                        index = view.getLastVisiblePosition();
+                        break;
+                    case SCROLL_STATE_IDLE:
+                        int scrolled = view.getLastVisiblePosition();
+                        if (scrolled > index) {
+                            fab.hide();
+                        } else {
+                            fab.show();
+                        }
+                        break;
+                }
+            }
+
+            @Override
+            public void onScroll(AbsListView view, int firstVisibleItem, int visibleItemCount, int totalItemCount) {
+            }
+        });
+    }
+
+    @Override
+    public void onBackPressed() {
+        DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
+        if (drawer.isDrawerOpen(GravityCompat.START)) {
+            drawer.closeDrawer(GravityCompat.START);
+        } else {
+            super.onBackPressed();
+        }
     }
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         // Inflate the menu; this adds items to the action bar if it is present.
-        getMenuInflater().inflate(R.menu.menu_main, menu);
+        getMenuInflater().inflate(R.menu.main, menu);
         return true;
     }
 
@@ -134,18 +145,57 @@ public class MainActivity extends AppCompatActivity {
         int id = item.getItemId();
 
         //noinspection SimplifiableIfStatement
-        if (id == R.id.action_web) {
-            Uri uri = Uri.parse("http://119.29.38.129:8000");
-            startActivity(new Intent(Intent.ACTION_VIEW, uri));
-            return true;
+        if (id == R.id.action_settings) {
+            Intent intent = new Intent(MainActivity.this, SettingsActivity.class);
+            startActivity(intent);
+        } else if (id == R.id.action_flush) {
+            Snackbar.make(messageListView, "正在刷新……", Snackbar.LENGTH_SHORT)
+                    .setAction("Action", null).show();
+            flush();
         }
 
         return super.onOptionsItemSelected(item);
     }
 
+    @SuppressWarnings("StatementWithEmptyBody")
+    @Override
+    public boolean onNavigationItemSelected(MenuItem item) {
+        // Handle navigation view item clicks here.
+        int id = item.getItemId();
+
+        if (id == R.id.nav_about) {
+            Intent intent = new Intent(MainActivity.this, About.class);
+            startActivity(intent);
+        } else if (id == R.id.nav_web) {
+            Uri uri = Uri.parse("http://119.29.38.129:8000");
+            startActivity(new Intent(Intent.ACTION_VIEW, uri));
+            return true;
+        } else if (id == R.id.nav_manage) {
+            Intent intent = new Intent(MainActivity.this, SettingsActivity.class);
+            startActivity(intent);
+        } else if (id == R.id.nav_history) {
+            Intent intent = new Intent(MainActivity.this, HistorySetSubjectActivity.class);
+            startActivity(intent);
+        } else if (id == R.id.nav_clean) {
+            allSubject.clear();
+            allMessage.clear();
+            SQLiteDatabase database = dbHelper.getWritableDatabase();
+            database.execSQL("delete from homework");
+            database.execSQL("delete from subject");
+            database.close();
+            Toast.makeText(MainActivity.this, "清除成功～", Toast.LENGTH_SHORT).show();
+            flush();
+        }
+
+        DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
+        drawer.closeDrawer(GravityCompat.START);
+        return true;
+    }
+
+
     private void sendRequestWithHttpClient(String method) {
         final String m = method;
-        new Thread(new Runnable() {
+        Thread thread = new Thread(new Runnable() {
             @Override
             public void run() {
                 String urlstring;
@@ -166,21 +216,22 @@ public class MainActivity extends AppCompatActivity {
                     String str = new String(data, "UTF-8");
                     conn.disconnect();
 
-                    if (m == "subject") {
+                    if (m.equals("subject")) {
                         subjectparseJSONWithGSON(str);
-                        subjectCount.countDown();
                     } else {
                         messageparseJSONWithGSON(str);
                     }
-                } catch (MalformedURLException e) {
-                    e.printStackTrace();
-                } catch (IOException e) {
-                    e.printStackTrace();
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
             }
-        }).start();
+        });
+        thread.start();
+        try {
+            thread.join();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
     }
 
     private void subjectparseJSONWithGSON(String jsonData) {
@@ -200,6 +251,7 @@ public class MainActivity extends AppCompatActivity {
                 values.put("name", subject.getName());
                 database.insert("subject", null, values);
             }
+            database.close();
         }
     }
 
@@ -209,7 +261,6 @@ public class MainActivity extends AppCompatActivity {
         }.getType());
         for (Message message : messagesList) {
             message.setSubjectName(allSubject.get(message.getSubject()));
-            allMessage.add(message);
             Log.d("MainActivity", "subject name is " + allSubject.get(message.getSubject()));
             Log.d("MainActivity", "subject id is " + message.getSubject());
             Log.d("MainActivity", "text is " + message.getText());
@@ -225,6 +276,18 @@ public class MainActivity extends AppCompatActivity {
                 values.put("date", message.getDate());
                 database.insert("homework", null, values);
             }
+
+            c = database.query("subject", null, "id=" + message.getSubject(), null, null, null, null);
+            if (c.getCount() != 0) {
+                if (c.moveToFirst()) {
+                    do {
+                        int show = c.getInt(c.getColumnIndex("isView"));
+                        if (show == 1)
+                            allMessage.add(message);
+                    } while (c.moveToNext());
+                }
+            }
+            database.close();
         }
         android.os.Message m = new android.os.Message();
         m.what = UPDATE_TEXT;
@@ -244,4 +307,67 @@ public class MainActivity extends AppCompatActivity {
             }
         }
     };
+
+    private void flush() {
+        SQLiteDatabase database = dbHelper.getWritableDatabase();
+
+        allSubject.clear();
+        allMessage.clear();
+
+
+        boolean networkState = NetworkDetector.detect(MainActivity.this);
+        if (networkState) {
+            database.execSQL("delete from homework");
+            //database.execSQL("delete from subject");
+            sendRequestWithHttpClient("subject");
+            sendRequestWithHttpClient("all");
+        } else {
+            Cursor csubject = database.query("subject", null, null, null, null, null, null);
+            if (csubject.getCount() == 0)
+                Toast.makeText(MainActivity.this, "无网络连接，请打开Wifi或数据流量", Toast.LENGTH_SHORT).show();
+            else {
+                Toast.makeText(MainActivity.this, "无网络连接，仅显示本地数据", Toast.LENGTH_SHORT).show();
+                if (csubject.moveToFirst()) {
+                    do {
+                        allSubject.put(csubject.getInt(csubject.getColumnIndex("id")), csubject.getString(csubject.getColumnIndex("name")));
+                    } while (csubject.moveToNext());
+                }
+                Cursor chomework = database.query("homework", null, null, null, null, null, null);
+                if (chomework.moveToLast()) {
+                    do {
+                        int subjectid = chomework.getInt(chomework.getColumnIndex("subjectid"));
+                        Cursor c = database.query("subject", null, "id=" + subjectid, null, null, null, null);
+                        if (c.getCount() != 0) {
+                            if (c.moveToFirst()) {
+                                do {
+                                    int show = c.getInt(c.getColumnIndex("isView"));
+                                    if (show == 1) {
+                                        Message message = new Message();
+                                        message.setPk(chomework.getInt(chomework.getColumnIndex("id")));
+                                        Map<String, String> fields = new HashMap<>();
+                                        fields.put("text", chomework.getString(chomework.getColumnIndex("homework")));
+                                        fields.put("date", chomework.getString(chomework.getColumnIndex("date")));
+                                        fields.put("subject", "" + chomework.getInt(chomework.getColumnIndex("subjectid")));
+                                        message.setFields(fields);
+                                        message.setSubjectName(allSubject.get(message.getSubject()));
+                                        allMessage.add(message);
+                                    }
+                                } while (c.moveToNext());
+                            }
+                        }
+                    } while (chomework.moveToPrevious());
+                }
+                android.os.Message m = new android.os.Message();
+                m.what = UPDATE_TEXT;
+                handler.sendMessage(m);
+                MessageAdapter adapter = (MessageAdapter) messageListView.getAdapter();
+                try {
+                    adapter.notifyDataSetChanged();
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+        database.close();
+    }
 }

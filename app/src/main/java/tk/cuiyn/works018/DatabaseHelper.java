@@ -10,12 +10,12 @@ import android.database.sqlite.SQLiteOpenHelper;
 public class DatabaseHelper extends SQLiteOpenHelper{
     DatabaseHelper(Context context)
     {
-        super(context, "works.db", null, 1);
+        super(context, "works.db", null, 2);
     }
 
     @Override
     public void onCreate(SQLiteDatabase db) {
-        String subject = "create table subject (id integer primary key, name text)";
+        String subject = "create table subject (id integer primary key, name text, isView integer default 1)";
         String homework = "create table homework (id integer primary key, date text, homework text, subjectid integer,FOREIGN KEY(subjectid) REFERENCES subject(id) )";
         db.execSQL(subject);
         db.execSQL(homework);
@@ -23,12 +23,14 @@ public class DatabaseHelper extends SQLiteOpenHelper{
 
     @Override
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
-        // TODO 更改数据库版本的操作
+        if (oldVersion == 1 && newVersion == 2) {
+            db.execSQL("ALTER TABLE subject ADD COLUMN isView integer default 1;");
+        }
     }
 
     @Override
     public void onOpen(SQLiteDatabase db) {
         super.onOpen(db);
-        // TODO 每次成功打开数据库后首先被执行
+
     }
 }
