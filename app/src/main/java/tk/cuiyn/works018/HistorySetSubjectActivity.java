@@ -38,10 +38,8 @@ public class HistorySetSubjectActivity extends AppCompatActivity {
         if (c.moveToFirst()) {
             do {
                 Subject subject = new Subject();
-                subject.setPk(c.getInt(c.getColumnIndex("id")));
-                Map<String, String> map = new HashMap<>();
-                map.put("name", c.getString(c.getColumnIndex("name")));
-                subject.setFields(map);
+                subject.setId(c.getInt(c.getColumnIndex("id")));
+                subject.setName(c.getString(c.getColumnIndex("name")));
                 allSubject.add(subject);
             } while (c.moveToNext());
         }
@@ -56,7 +54,7 @@ public class HistorySetSubjectActivity extends AppCompatActivity {
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
                 Subject subject = allSubject.get(position);
                 Intent intent = new Intent(HistorySetSubjectActivity.this, HistoryMessageActivity.class);
-                intent.putExtra("subjectID", subject.getPk());
+                intent.putExtra("subjectID", subject.getId());
                 intent.putExtra("subjectName", subject.getName());
                 startActivity(intent);
             }

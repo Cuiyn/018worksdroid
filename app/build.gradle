@@ -8,8 +8,8 @@ android {
         applicationId "tk.cuiyn.works018"
         minSdkVersion 14
         targetSdkVersion 23
-        versionCode 1
-        versionName "1.0"
+        versionCode 5
+        versionName "1.4"
     }
     buildTypes {
         release {

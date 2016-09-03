@@ -44,7 +44,7 @@ public class SettingSubjectAdapter extends ArrayAdapter<Subject> {
         DatabaseHelper dbHelper = new DatabaseHelper(super.getContext());
         final SQLiteDatabase database = dbHelper.getWritableDatabase();
         int show = 0;
-        Cursor c = database.query("subject", null, "id="+subject.getPk(), null, null, null, null);
+        Cursor c = database.query("subject", null, "id="+subject.getId(), null, null, null, null);
         if(c.getCount() != 0) {
             if (c.moveToFirst()) {
                 do {
@@ -68,7 +68,7 @@ public class SettingSubjectAdapter extends ArrayAdapter<Subject> {
                     contentValues.put("isView", 0);
                 }
 
-                database.update("subject", contentValues, "id="+subject.getPk(), null);
+                database.update("subject", contentValues, "id="+subject.getId(), null);
 
             }
         });

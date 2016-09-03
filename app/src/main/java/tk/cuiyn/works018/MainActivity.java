@@ -53,6 +53,7 @@ public class MainActivity extends AppCompatActivity
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
+        //悬浮刷新按钮
         final FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
         if (fab != null) {
             fab.setOnClickListener(new View.OnClickListener() {
@@ -200,9 +201,10 @@ public class MainActivity extends AppCompatActivity
             public void run() {
                 String urlstring;
                 if (m == "subject") {
-                    urlstring = "http://119.29.38.129:8000/json/?m=subject";
+                    //urlstring = "http://119.29.38.129:8000/json/?m=subject";
+                    urlstring = "http://119.29.38.129:8000/newjson/?m=s";
                 } else {
-                    urlstring = "http://119.29.38.129:8000/json/?m=all";
+                    urlstring = "http://119.29.38.129:8000/newjson/?m=a&p=1";
                 }
                 try {
                     URL url = new URL(urlstring);
@@ -236,18 +238,17 @@ public class MainActivity extends AppCompatActivity
 
     private void subjectparseJSONWithGSON(String jsonData) {
         Gson gson = new Gson();
-        List<Subject> subjectsList = gson.fromJson(jsonData, new TypeToken<List<Subject>>() {
-        }.getType());
+        List<Subject> subjectsList = gson.fromJson(jsonData, new TypeToken<List<Subject>>() {}.getType());
         for (Subject subject : subjectsList) {
-            allSubject.put(subject.getPk(), subject.getName());
-            Log.d("MainActivity", "id is " + subject.getPk());
+            allSubject.put(subject.getId(), subject.getName());
+            Log.d("MainActivity", "id is " + subject.getId());
             Log.d("MainActivity", "name is " + subject.getName());
 
             SQLiteDatabase database = dbHelper.getWritableDatabase();
-            Cursor c = database.query("subject", null, "id=" + subject.getPk(), null, null, null, null);
+            Cursor c = database.query("subject", null, "id=" + subject.getId(), null, null, null, null);
             if (c.getCount() == 0) {
                 ContentValues values = new ContentValues();
-                values.put("id", subject.getPk());
+                values.put("id", subject.getId());
                 values.put("name", subject.getName());
                 database.insert("subject", null, values);
             }
@@ -256,9 +257,9 @@ public class MainActivity extends AppCompatActivity
     }
 
     private void messageparseJSONWithGSON(String jsonData) {
+        Log.d("MainActivity", jsonData);
         Gson gson = new Gson();
-        List<Message> messagesList = gson.fromJson(jsonData, new TypeToken<List<Message>>() {
-        }.getType());
+        List<Message> messagesList = gson.fromJson(jsonData, new TypeToken<List<Message>>() {}.getType());
         for (Message message : messagesList) {
             message.setSubjectName(allSubject.get(message.getSubject()));
             Log.d("MainActivity", "subject name is " + allSubject.get(message.getSubject()));
@@ -267,10 +268,10 @@ public class MainActivity extends AppCompatActivity
             Log.d("MainActivity", "date is " + message.getDate());
 
             SQLiteDatabase database = dbHelper.getWritableDatabase();
-            Cursor c = database.query("homework", null, "id=" + message.getPk(), null, null, null, null);
+            Cursor c = database.query("homework", null, "id=" + message.getId(), null, null, null, null);
             if (c.getCount() == 0) {
                 ContentValues values = new ContentValues();
-                values.put("id", message.getPk());
+                values.put("id", message.getId());
                 values.put("subjectid", message.getSubject());
                 values.put("homework", message.getText());
                 values.put("date", message.getDate());
@@ -343,12 +344,11 @@ public class MainActivity extends AppCompatActivity
                                     int show = c.getInt(c.getColumnIndex("isView"));
                                     if (show == 1) {
                                         Message message = new Message();
-                                        message.setPk(chomework.getInt(chomework.getColumnIndex("id")));
-                                        Map<String, String> fields = new HashMap<>();
-                                        fields.put("text", chomework.getString(chomework.getColumnIndex("homework")));
-                                        fields.put("date", chomework.getString(chomework.getColumnIndex("date")));
-                                        fields.put("subject", "" + chomework.getInt(chomework.getColumnIndex("subjectid")));
-                                        message.setFields(fields);
+                                        message.setId(chomework.getInt(chomework.getColumnIndex("id")));
+                                        message.setDate(chomework.getString(chomework.getColumnIndex("date")));
+                                        message.setText(chomework.getString(chomework.getColumnIndex("homework")));
+                                        message.setSubject(chomework.getInt(chomework.getColumnIndex("subjectid")));
+
                                         message.setSubjectName(allSubject.get(message.getSubject()));
                                         allMessage.add(message);
                                     }

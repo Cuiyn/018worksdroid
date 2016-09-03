@@ -7,22 +7,22 @@ import java.util.Map;
  * Created by cuiyn on 16-3-12.
  */
 public class Subject {
-    int pk;
-    Map<String, String> fields = new HashMap<>();
+    int id;
+    String name;
 
-    public int getPk() {
-        return pk;
+    public int getId() {
+        return id;
+    }
+
+    public void setId(int id) {
+        this.id = id;
     }
 
     public String getName() {
-        return fields.get("name");
+        return name;
     }
 
-    public void setPk(int pk) {
-        this.pk = pk;
-    }
-
-    public void setFields(Map<String, String> fields) {
-        this.fields = fields;
+    public void setName(String name) {
+        this.name = name;
     }
 }

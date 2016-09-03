@@ -39,12 +39,13 @@ public class MessageAdapter extends ArrayAdapter<Message> {
         TextView subjectDate = (TextView) view.findViewById(R.id.message_date);
         TextView subjectText = (TextView) view.findViewById(R.id.message_text);
 
+        /*
         SpannableStringBuilder spannableStringBuilder1 = new SpannableStringBuilder("科目：" + message.getSubjectName());
         AbsoluteSizeSpan absoluteSizeSpan = new AbsoluteSizeSpan(24);
         spannableStringBuilder1.setSpan(absoluteSizeSpan, 0, 3, Spannable.SPAN_EXCLUSIVE_INCLUSIVE);
         subjectName.setText(spannableStringBuilder1);
 
-        SpannableStringBuilder spannableStringBuilder2 = new SpannableStringBuilder("发布日期：" + message.getDate().substring(0, 10) + " " + message.getDate().substring(11, 16));
+        SpannableStringBuilder spannableStringBuilder2 = new SpannableStringBuilder("发布日期：" + message.getDate());
         spannableStringBuilder2.setSpan(absoluteSizeSpan, 0, 5, Spannable.SPAN_EXCLUSIVE_INCLUSIVE);
         subjectDate.setText(spannableStringBuilder2);
 
@@ -56,6 +57,17 @@ public class MessageAdapter extends ArrayAdapter<Message> {
         SpannableStringBuilder spannableStringBuilder3 = new SpannableStringBuilder("内容：" + text);
         spannableStringBuilder3.setSpan(absoluteSizeSpan, 0, 3, Spannable.SPAN_EXCLUSIVE_INCLUSIVE);
         subjectText.setText(spannableStringBuilder3);
+        */
+
+        String text = message.getText();;
+        if(message.getText().length() >= 36) {
+            text = text.substring(0, 36);
+            text+="…";
+        }
+
+        subjectName.setText("科目：" + message.getSubjectName());
+        subjectDate.setText("发布日期：" + message.getDate());
+        subjectText.setText("内容：" + text);
 
         return view;
     }

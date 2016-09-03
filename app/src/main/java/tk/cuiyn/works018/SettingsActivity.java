@@ -35,10 +35,9 @@ public class SettingsActivity extends AppCompatActivity {
         if (c.moveToFirst()) {
             do {
                 Subject subject = new Subject();
-                subject.setPk(c.getInt(c.getColumnIndex("id")));
-                Map<String, String> map = new HashMap<>();
-                map.put("name", c.getString(c.getColumnIndex("name")));
-                subject.setFields(map);
+                subject.setId(c.getInt(c.getColumnIndex("id")));
+                subject.setName(c.getString(c.getColumnIndex("name")));
+
                 allSubject.add(subject);
             } while (c.moveToNext());
         }

@@ -7,17 +7,43 @@ import java.util.Map;
  * Created by cuiyn on 16-3-12.
  */
 public class Message {
-    int pk;
+    int id;
+    String date;
+    String text;
+    int subject;
+    String subjectName;
 
-    public void setFields(Map<String, String> fields) {
-        this.fields = fields;
+    public int getId() {
+        return id;
     }
 
-    public void setPk(int pk) {
-        this.pk = pk;
+    public void setId(int id) {
+        this.id = id;
     }
 
-    Map<String, String> fields = new HashMap<>();
+    public String getDate() {
+        return date;
+    }
+
+    public void setDate(String date) {
+        this.date = date;
+    }
+
+    public String getText() {
+        return text;
+    }
+
+    public void setText(String text) {
+        this.text = text;
+    }
+
+    public int getSubject() {
+        return subject;
+    }
+
+    public void setSubject(int subject) {
+        this.subject = subject;
+    }
 
     public String getSubjectName() {
         return subjectName;
@@ -25,23 +51,5 @@ public class Message {
 
     public void setSubjectName(String subjectName) {
         this.subjectName = subjectName;
-    }
-
-    String subjectName;
-
-    public int getPk() {
-        return pk;
-    }
-
-    public String getText() {
-        return fields.get("text");
-    }
-
-    public String getDate() {
-        return fields.get("date");
-    }
-
-    public int getSubject() {
-        return Integer.valueOf(fields.get("subject")).intValue();
     }
 }
